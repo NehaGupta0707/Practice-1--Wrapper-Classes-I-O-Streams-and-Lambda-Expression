@@ -1,0 +1,156 @@
+import java.util.*;
+import java.io.*;
+import java.io.Serializable;
+
+class Employee {
+    int id;
+    String name, designation;
+    double salary;
+    public Employee(int id, String name, String desig, double sal) {
+        this.id = id; this.name = name; designation = desig; salary = sal;
+    }
+    public String toString() {
+        return id + "," + name + "," + designation + "," + salary;
+    }
+    public static Employee parse(String s) {
+        String[] p = s.split(",");
+        return new Employee(Integer.parseInt(p[0]), p[1], p[2], Double.parseDouble(p[3]));
+    }
+}
+
+class Student implements Serializable {
+    int studentID;
+    String name;
+    double grade;
+    public Student(int studentID, String name, double grade) {
+        this.studentID = studentID;
+        this.name = name;
+        this.grade = grade;
+    }
+}
+
+public class Main {
+    public static void main(String[] args) throws Exception {
+        Scanner sc = new Scanner(System.in);
+        while(true) {
+            System.out.println("\nMenu:");
+            System.out.println("1. Part a: Sum integers with Autoboxing/Unboxing");
+            System.out.println("2. Part b: Serialize/Deserialize Student");
+            System.out.println("3. Part c: Employee Management with File Handling");
+            System.out.println("0. Exit");
+            System.out.print("Enter choice: ");
+            int choice;
+            try {
+                choice = Integer.parseInt(sc.nextLine());
+            } catch (Exception e) {
+                System.out.println("Invalid input. Enter a number.");
+                continue;
+            }
+            if(choice == 0) {
+                System.out.println("Exiting...");
+                break;
+            }
+            switch(choice) {
+                case 1:
+                    System.out.println("Enter integers separated by space:");
+                    String[] inputs = sc.nextLine().split("\\s+");
+                    ArrayList<Integer> nums = new ArrayList<>();
+                    try {
+                        for (String s : inputs) nums.add(Integer.parseInt(s));
+                    } catch (Exception e) {
+                        System.out.println("Invalid integer input.");
+                        break;
+                    }
+                    int sum = 0;
+                    for (Integer n : nums) sum += n;
+                    System.out.println("Sum = " + sum);
+                    break;
+
+                case 2:
+                    Student student = new Student(101, "John", 9.5);
+                    try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("student.ser"))) {
+                        oos.writeObject(student);
+                    } catch (IOException e) {
+                        System.out.println("Error during serialization: " + e.getMessage());
+                        break;
+                    }
+                    Student deserializedStudent = null;
+                    try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream("student.ser"))) {
+                        deserializedStudent = (Student) ois.readObject();
+                    } catch (IOException | ClassNotFoundException e) {
+                        System.out.println("Error during deserialization: " + e.getMessage());
+                        break;
+                    }
+                    System.out.println("Deserialized Student data:");
+                    System.out.println("ID: " + deserializedStudent.studentID + ", Name: " + deserializedStudent.name + ", Grade: " + deserializedStudent.grade);
+                    break;
+
+                case 3:
+                    employeeManagement(sc);
+                    break;
+
+                default:
+                    System.out.println("Invalid choice! Try again.");
+            }
+        }
+        sc.close();
+    }
+
+    static void employeeManagement(Scanner sc) throws IOException {
+        while(true) {
+            System.out.println("\nEmployee Management Menu:");
+            System.out.println("1. Add Employee");
+            System.out.println("2. Display All Employees");
+            System.out.println("0. Return to Main Menu");
+            System.out.print("Enter choice: ");
+            int choice;
+            try {
+                choice = Integer.parseInt(sc.nextLine());
+            } catch (Exception e) {
+                System.out.println("Invalid input.");
+                continue;
+            }
+            if(choice == 0) break;
+            switch(choice) {
+                case 1:
+                    System.out.println("Enter ID, Name, Designation, Salary (space separated):");
+                    String[] data = sc.nextLine().split("\\s+");
+                    if (data.length != 4) {
+                        System.out.println("Invalid input.");
+                        continue;
+                    }
+                    try {
+                        int id = Integer.parseInt(data[0]);
+                        String name = data[1];
+                        String desig = data[2];
+                        double sal = Double.parseDouble(data[3]);
+                        Employee emp = new Employee(id, name, desig, sal);
+                        try (BufferedWriter bw = new BufferedWriter(new FileWriter("employees.txt", true))) {
+                            bw.write(emp.toString());
+                            bw.newLine();
+                        }
+                        System.out.println("Employee added successfully.");
+                    } catch (Exception e) {
+                        System.out.println("Invalid input data.");
+                    }
+                    break;
+                case 2:
+                    File file = new File("employees.txt");
+                    if (!file.exists()) {
+                        System.out.println("No employee records found.");
+                        break;
+                    }
+                    try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+                        String line;
+                        while ((line = br.readLine()) != null) {
+                            Employee emp = Employee.parse(line);
+                            System.out.println("ID: " + emp.id + ", Name: " + emp.name + ", Designation: " + emp.designation + ", Salary: " + emp.salary);
+                        }
+                    }
+                    break;
+                default:
+                    System.out.println("Invalid choice.");
+            }
+        }
+    }
+}
